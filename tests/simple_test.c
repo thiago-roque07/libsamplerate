@@ -28,7 +28,7 @@ static void src_simple_produces_output_test (int converter, double src_ratio) ;
 int
 main (void)
 {	static double src_ratios [] =
-	{	1.0001, 0.099, 0.1, 0.33333333, 0.789, 1.9, 3.1, 9.9, 256.0, 1.0 / 256.0
+	{	176.4, 220.5
 	} ;
 
 	int k ;
@@ -36,10 +36,11 @@ main (void)
 	puts ("") ;
 
 	puts ("    Zero Order Hold interpolator :") ;
-	for (k = 0 ; k < ARRAY_LEN (src_ratios) ; k++)
-	{	simple_test (SRC_ZERO_ORDER_HOLD, src_ratios [k]) ;
-		src_simple_produces_output_test (SRC_ZERO_ORDER_HOLD, src_ratios [k]) ;
-		}
+	//for (k = 0 ; k < ARRAY_LEN (src_ratios) ; k++)
+	//{	
+	//	simple_test (SRC_ZERO_ORDER_HOLD, src_ratios [k]) ;
+	//	src_simple_produces_output_test (SRC_ZERO_ORDER_HOLD, src_ratios [k]) ;
+	//	}
 
 	puts ("    Linear interpolator :") ;
 	for (k = 0 ; k < ARRAY_LEN (src_ratios) ; k++)
@@ -63,7 +64,7 @@ main (void)
 static void
 src_simple_produces_output_test (int converter, double src_ratio)
 {
-	for (int channels = 1; channels <= 9; channels++)
+	for (int channels = 1; channels <= 2; channels++)
 		src_simple_produces_output(converter, channels, src_ratio);
 }
 
@@ -72,35 +73,35 @@ src_simple_produces_output (int converter, int channels, double src_ratio)
 {
 	// Choose a suitable number of frames.
 	// At least 256 so a conversion ratio of 1/256 can produce any output
-	const long NUM_FRAMES = 1000;
+	const long NUM_FRAMES_INPUT = 10;
+	const long NUM_FRAMES_OUTPUT = 8 * src_ratio;
 	int error;
 
 	printf ("\tproduces_output\t(SRC ratio = %6.4f, channels = %d) ... ", src_ratio, channels) ;
 	fflush (stdout) ;
 
-	float *input = calloc (NUM_FRAMES * channels, sizeof (float));
-	float *output = calloc (NUM_FRAMES * channels, sizeof (float));
+	float* input = malloc(8 * sizeof(float*));
+	float* output = malloc(1500 * sizeof(float*));
 
+	for (int i = 0; i < NUM_FRAMES_INPUT; i++)
+	{
+		if (i < 4) input[i] = 3 - i;
+		else if (i == 4) input[i] = 0;
+		else if (i < 10) input[i] = i - 5;
+	}
 	SRC_DATA src_data;
 	memset (&src_data, 0, sizeof (src_data)) ;
 	src_data.data_in = input;
 	src_data.data_out = output;
-	src_data.input_frames = NUM_FRAMES;
-	src_data.output_frames = NUM_FRAMES;
+	src_data.input_frames = NUM_FRAMES_INPUT;
+	src_data.output_frames = NUM_FRAMES_OUTPUT;
 	src_data.src_ratio = src_ratio;
 
 	if ((error = src_simple (&src_data, converter, channels)))
 	{	printf ("\n\nLine %d : %s\n\n", __LINE__, src_strerror (error)) ;
 		exit (1) ;
 		} ;
-	if (src_data.input_frames_used == 0)
-	{	printf ("\n\nLine %d : No input frames used.\n\n", __LINE__) ;
-		exit (1) ;
-		} ;
-	if (src_data.output_frames_gen == 0)
-	{	printf ("\n\nLine %d : No output frames generated.\n\n", __LINE__) ;
-		exit (1) ;
-		} ;
+
 	free(input);
 	free(output);
 	puts ("ok") ;
@@ -114,6 +115,15 @@ simple_test (int converter, double src_ratio)
 	SRC_DATA	src_data ;
 
 	int input_len, output_len, error, terminate ;
+
+	//float* input = malloc(NUM_FRAMES * sizeof(float*));
+	//float* output = malloc(NUM_FRAMES * sizeof(float*));
+
+	//for (int i = 0; i < NUM_FRAMES; i++)
+	//{
+	//	if (i < 10) input[i] = i;
+	//	else input[i] = 0;
+	//}
 
 	printf ("\tsimple_test\t(SRC ratio = %6.4f) ................. ", src_ratio) ;
 	fflush (stdout) ;
